@@ -189,6 +189,10 @@ export class CasperMoac extends CasperMoacLazyLoadMixin(
                     on-click="__removeActiveSorter"
                     data-path$="[[activeSorter.path]]"></casper-icon-button>
                 </template>
+
+                <div id="left-bottom-slot">
+                  <slot name="left-bottom"></slot>
+                </div>
               </div>
             </template>
 

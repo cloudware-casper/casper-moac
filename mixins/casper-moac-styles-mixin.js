@@ -278,13 +278,23 @@ export const CasperMoacStylesMixin = superClass => {
             margin-right: 10px;
           }
 
-          .main-container vaadin-split-layout .left-side-container #active-sorters-container casper-icon-button {
+          .main-container vaadin-split-layout .left-side-container #active-sorters-container casper-icon-button,
+          .main-container vaadin-split-layout .left-side-container #active-sorters-container #left-bottom-slot ::slotted(casper-icon-button) {
             height: 25px;
             padding: 4px 8px;
           }
 
+          .main-container vaadin-split-layout .left-side-container #active-sorters-container #left-bottom-slot {
+            display: flex;
+            margin-left: auto;
+          }
+
           .main-container vaadin-split-layout .left-side-container #active-sorters-container casper-icon-button:not(:last-of-type) {
             margin-right: 8px;
+          }
+
+          .main-container vaadin-split-layout .left-side-container #active-sorters-container #left-bottom-slot ::slotted(casper-icon-button) {
+            margin-left: 8px;
           }
 
           /* Vaadin-grid */
