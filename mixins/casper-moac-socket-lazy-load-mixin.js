@@ -186,6 +186,15 @@ export const CasperMoacSocketLazyLoadMixin = superClass => {
          */
         tableName: {
           type: String
+        },
+        /**
+         * Fetch new items when the users scrolls past this value of pixels
+         *
+         * @type {Number}
+         */
+        scrollThreshold: {
+          type: Number,
+          value: 250
         }
       }
     }
@@ -429,8 +438,8 @@ export const CasperMoacSocketLazyLoadMixin = superClass => {
 
         this._lastScrollTop = this.gridScroller.scrollTop;
 
-        // Re-fetch new items when the users scrolls past the 500px threshold.
-        if ((gridScrollerHeight - gridScrollerPosition <= 1 || this.gridScroller.scrollTop === 0) && this._sizeUserIds > this._maxNrOfItems) {
+        // Fetch new items when the users scrolls past the threshold.
+        if ((gridScrollerHeight - gridScrollerPosition <= this.scrollThreshold || this.gridScroller.scrollTop <= this.scrollThreshold) && this._sizeUserIds > this._maxNrOfItems) {
           this._lastScrollTop = undefined;
           if (goingDown === true) {
             this.__debounce('treeDebouncer', this._scrollAndRenderBot.bind(this));
@@ -510,7 +519,32 @@ export const CasperMoacSocketLazyLoadMixin = superClass => {
             if (this.resourceFormatter) this.resourceFormatter.call(this.page || {}, item, this._responseIncluded);
           }
 
-          if (this._treeColumn) this._treeColumn.width = (50+(this.maxExpandedLevel*20))+'px';
+          if (this._treeColumn) {
+            if (!this._treeColumn.path) console.error('casper-moac-tree-column MUST have a path!');
+
+            let biggestStringLength = 0;
+            let biggestStringIndex;
+
+            sortedData.forEach((item, index) => {
+              if (item[this.levelColumn] == this.maxExpandedLevel) {
+                if (item[this._treeColumn.path].toString().length > biggestStringLength) {
+                  biggestStringLength = item[this._treeColumn.path].toString().length;
+                  biggestStringIndex = index;
+                }
+              }
+            });
+
+            const biggestStringItem = sortedData[biggestStringIndex];
+            const treeColumnStyle = this._treeColumn.getStyleForColumn(biggestStringItem[this.levelColumn], biggestStringItem.has_children);
+            const marginLeftProperty = treeColumnStyle.match(/margin-left:\s*\S+;/);
+            const firstDigitIndex = marginLeftProperty[0].search(/\d/);
+            const marginLeftValue = marginLeftProperty[0].slice(firstDigitIndex, -3);
+
+            // The width of the column is calculated based on the item which takes up more space, of the maximum expanded level
+            // Width = the item's margin-left value + 9px per string character + 5px to make sure everything fits nicely
+            this._treeColumn.width = Math.max(this._treeColumn.initialWidth, (+marginLeftValue + (biggestStringLength * 9) + 5)) + 'px';
+          }
+
           this._renderedArray = sortedData;
         } else {
 
@@ -523,7 +557,23 @@ export const CasperMoacSocketLazyLoadMixin = superClass => {
             if (this.resourceFormatter)
               this.resourceFormatter.call(this.page || {}, item, this._responseIncluded);
           }
-          if (this._treeColumn) this._treeColumn.width = (50+(this.maxExpandedLevel*28))+'px';
+
+          if (this._treeColumn) {
+            let biggestStringLength = 0;
+
+            response.data.forEach((item) => {
+              if (item[this.levelColumn] == this.maxExpandedLevel) {
+                if (item[this._treeColumn.path].toString().length > biggestStringLength) {
+                  biggestStringLength = item[this._treeColumn.path].toString().length;
+                }
+              }
+            });
+
+            // The width of the column is calculated based on the item which takes up more space, of the maximum expanded level
+            // Width = 10px per crumb-circle + 13px per crumb-line + 9px per string character + 5px to make sure everything fits nicely
+            this._treeColumn.width = Math.max(this._treeColumn.initialWidth, ((10 * this.maxExpandedLevel) + (13 * (this.maxExpandedLevel - 1)) + (biggestStringLength * 9) + 5)) + 'px';
+          }
+
           this._renderedArray = response.data;
         }
         this._responseIncluded = undefined;
